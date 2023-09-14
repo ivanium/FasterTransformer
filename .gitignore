@@ -16,3 +16,5 @@ __pycache__/
 
 /3rdparty/NeMo/
 /3rdparty/apex/
+
+compile_commands.json
