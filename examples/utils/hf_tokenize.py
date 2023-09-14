@@ -33,6 +33,6 @@ def main(in_file, model_name):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("in_file")
-    parser.add_argument("model_name", nargs="?", default="gpt2")
+    parser.add_argument("model_name", nargs="?", default="meta-llama/Llama-2-7b-hf")
 
     main(**vars(parser.parse_args()))
