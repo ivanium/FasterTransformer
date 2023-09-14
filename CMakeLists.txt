@@ -16,6 +16,8 @@ project(FasterTransformer LANGUAGES CXX CUDA)
 
 find_package(CUDA 10.2 REQUIRED)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 if(${CUDA_VERSION_MAJOR} VERSION_GREATER_EQUAL "11")
   add_definitions("-DENABLE_BF16")
   message("CUDA_VERSION ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} is greater or equal than 11.0, enable -DENABLE_BF16 flag")
@@ -348,6 +350,13 @@ add_library(transformer-shared SHARED
   $<TARGET_OBJECTS:ParallelGptDecoderLayerWeight>
   $<TARGET_OBJECTS:ParallelGptTritonBackend>
   $<TARGET_OBJECTS:ParallelGptWeight>
+  # [Manifold] Llama support
+  $<TARGET_OBJECTS:Llama>
+  $<TARGET_OBJECTS:LlamaContextDecoder>
+  $<TARGET_OBJECTS:LlamaDecoder>
+  $<TARGET_OBJECTS:LlamaDecoderLayerWeight>
+  $<TARGET_OBJECTS:LlamaWeight>
+  # [Manifold] end
   $<TARGET_OBJECTS:T5Common>
   $<TARGET_OBJECTS:T5Decoder>
   $<TARGET_OBJECTS:T5Decoding>
@@ -428,9 +437,9 @@ target_link_libraries(transformer-shared PUBLIC
   -lnvToolsExt
 )
 endif()
-  
+
 if (ENABLE_FP8)
-target_link_libraries(transformer-shared PUBLIC 
+target_link_libraries(transformer-shared PUBLIC
   $<TARGET_OBJECTS:BertFP8>
   $<TARGET_OBJECTS:BertFP8Weight>
   $<TARGET_OBJECTS:DecoderSelfAttentionFP8Layer>
