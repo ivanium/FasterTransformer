@@ -264,15 +264,15 @@ void LlamaDecoder<T>::forward(std::unordered_map<std::string, Tensor>*        ou
             }
         }
 
-        // TODO 使用的是T5 LN，这里是没有int8的参数支持
-        invokeGeneralT5LayerNorm(decoder_normed_input_,
-                                 layer_input,
-                                 gpt_decoder_layer_weight->at(l)->pre_layernorm_weights.gamma,
-                                 (const T*)nullptr,
-                                 layernorm_eps_,
-                                 local_batch_size,
-                                 hidden_units_,
-                                 stream_);
+        // TODO: T5 LN here doesn't have int8 support yet
+        invokeLlamaRMSNorm(decoder_normed_input_,
+                           layer_input,
+                           gpt_decoder_layer_weight->at(l)->pre_layernorm_weights.gamma,
+                           (const T*)nullptr,
+                           layernorm_eps_,
+                           local_batch_size,
+                           hidden_units_,
+                           stream_);
         sync_check_cuda_error();
 
         TensorMap self_attention_input_tensors(*input_tensors);

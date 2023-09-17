@@ -104,4 +104,7 @@ public:
                          const std::vector<LlamaDecoderLayerWeight<T>*>* decoder_layer_weights);
 };
 
+// Yifan: LLama RMS norm is the same as T5 Layer norm
+#define invokeLlamaRMSNorm invokeGeneralT5LayerNorm
+
 }  // namespace fastertransformer

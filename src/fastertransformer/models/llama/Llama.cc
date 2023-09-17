@@ -357,30 +357,30 @@ Llama<T>::Llama(size_t                              head_num,
 }
 
 template<typename T>
-Llama<T>::Llama(Llama<T> const& gpt):
-    BaseLayer(gpt),
-    head_num_(gpt.head_num_),
-    size_per_head_(gpt.size_per_head_),
-    inter_size_(gpt.inter_size_),
-    num_layer_(gpt.num_layer_),
-    vocab_size_(gpt.vocab_size_),
-    rotary_embedding_dim_(gpt.rotary_embedding_dim_),
-    layernorm_eps_(gpt.layernorm_eps_),
-    start_id_(gpt.start_id_),
-    end_id_(gpt.end_id_),
-    prompt_learning_start_id_(gpt.prompt_learning_start_id_),
-    prompt_learning_type_(gpt.prompt_learning_type_),
-    use_gptj_residual_(gpt.use_gptj_residual_),
-    hidden_units_(gpt.hidden_units_),
-    tensor_para_(gpt.tensor_para_),
-    pipeline_para_(gpt.pipeline_para_),
-    local_head_num_(gpt.local_head_num_),
-    vocab_size_padded_(gpt.vocab_size_padded_),
-    custom_all_reduce_comm_(gpt.custom_all_reduce_comm_),
-    enable_custom_all_reduce_(gpt.enable_custom_all_reduce_),
-    attention_type_(gpt.attention_type_),
-    int8_mode_(gpt.int8_mode_),
-    shared_contexts_ratio_(gpt.shared_contexts_ratio_)
+Llama<T>::Llama(Llama<T> const& llama):
+    BaseLayer(llama),
+    head_num_(llama.head_num_),
+    size_per_head_(llama.size_per_head_),
+    inter_size_(llama.inter_size_),
+    num_layer_(llama.num_layer_),
+    vocab_size_(llama.vocab_size_),
+    rotary_embedding_dim_(llama.rotary_embedding_dim_),
+    layernorm_eps_(llama.layernorm_eps_),
+    start_id_(llama.start_id_),
+    end_id_(llama.end_id_),
+    prompt_learning_start_id_(llama.prompt_learning_start_id_),
+    prompt_learning_type_(llama.prompt_learning_type_),
+    use_gptj_residual_(llama.use_gptj_residual_),
+    hidden_units_(llama.hidden_units_),
+    tensor_para_(llama.tensor_para_),
+    pipeline_para_(llama.pipeline_para_),
+    local_head_num_(llama.local_head_num_),
+    vocab_size_padded_(llama.vocab_size_padded_),
+    custom_all_reduce_comm_(llama.custom_all_reduce_comm_),
+    enable_custom_all_reduce_(llama.enable_custom_all_reduce_),
+    attention_type_(llama.attention_type_),
+    int8_mode_(llama.int8_mode_),
+    shared_contexts_ratio_(llama.shared_contexts_ratio_)
 {
     initialize();
 }
@@ -904,14 +904,14 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
             }
 
             if (pipeline_para_.rank_ == pipeline_para_.world_size_ - 1) {
-                invokeGeneralT5LayerNorm(normed_decoder_output_buf_ + hidden_units_offset,
-                                         decoder_output_buf_ + hidden_units_offset,
-                                         gpt_weights->post_decoder_layernorm.gamma,
-                                         (const T*)nullptr,
-                                         layernorm_eps_,
-                                         local_batch_size * beam_width,
-                                         hidden_units_,
-                                         stream_);
+                invokeLlamaRMSNorm(normed_decoder_output_buf_ + hidden_units_offset,
+                                   decoder_output_buf_ + hidden_units_offset,
+                                   gpt_weights->post_decoder_layernorm.gamma,
+                                   (const T*)nullptr,
+                                   layernorm_eps_,
+                                   local_batch_size * beam_width,
+                                   hidden_units_,
+                                   stream_);
                 sync_check_cuda_error();
 
                 if (tensor_para_.world_size_ == 1) {
