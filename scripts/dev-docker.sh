@@ -6,7 +6,7 @@ ROOT_DIR=$( cd -- "$SCRIPT_DIR/.." &> /dev/null && pwd )
 
 IMAGE_NAME=manifold_base
 # IMAGE_NAME=nvcr.io/nvidia/pytorch:22.09-py3
-CONTAINER_NAME=manifold-dev
+CONTAINER_NAME=manifold-dev-$USER
 
 start_docker() {
     docker_running=$(docker ps --format '{{.Names}}' | grep ${CONTAINER_NAME})

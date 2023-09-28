@@ -3,7 +3,7 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ROOT_DIR=$( cd -- "$SCRIPT_DIR/.." &> /dev/null && pwd )
 
-CONTAINER_NAME=manifold-dev
+CONTAINER_NAME=manifold-dev-${USER}
 
 if grep -q docker /proc/1/cgroup;
 then
