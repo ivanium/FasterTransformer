@@ -34,7 +34,8 @@ mkdir -p build  # we will use it for cmake build later
 
 ```bash
 # under FasterTransformer root dir
-ln -s /scrach/manifold/FasterTransformer/models models
+
+ln -s /scrach/manifold-project/FasterTransformer/models models
 ls models  # check access
 ```
 
