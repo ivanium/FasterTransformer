@@ -1,0 +1,13 @@
+Inside docker
+/FasterTransformer/build /home/gedatsu/FasterTransformer/scripts
+Running mnfd_llama with default config.ini
+[FT][WARNING] Skip NCCL initialization since requested tensor/pipeline parallel sizes are equals to 1.
+Total ranks: 1.
+Device NVIDIA A100-SXM4-40GB
+P0-0 is running with GPU #0.
+Device NVIDIA A100-SXM4-40GB
+P0-1 is running with GPU #1.
+[WARNING] gemm_config.in is not found; using default GEMM algo
+[WARNING] gemm_config.in is not found; using default GEMM algo
+after allocation    : free: 32.41 GB, total: 39.39 GB, used:  6.98 GB
+after allocation    : free: 32.41 GB, total: 39.39 GB, used:  6.98 GB
