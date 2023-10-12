@@ -14,7 +14,7 @@ after allocation    : free: 32.41 GB, total: 39.39 GB, used:  6.98 GB
 Writing 100 elements
     1   450  7483   310  7551   338  1522   823   292 29889 
 zeroCount = 0
-[INFO] request_batch_size 1 beam_width 1 head_num 32 size_per_head 128 total_output_len 100 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 1325.97 ms
-[INFO] request_batch_size 1 beam_width 1 head_num 32 size_per_head 128 total_output_len 100 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 1325.97 ms
+[INFO] request_batch_size 1 beam_width 1 head_num 32 size_per_head 128 total_output_len 100 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 1321.74 ms
+[INFO] request_batch_size 1 beam_width 1 head_num 32 size_per_head 128 total_output_len 100 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 1321.74 ms
 /home/gedatsu/FasterTransformer/scripts
 "<s> The capital of China is Beijing. The capital of the United States is Washington, D.C. The capital of France is Paris. The capital of the United Kingdom is London. The capital of Russia is Moscow. The capital of Germany is Berlin. The capital of Italy is Rome. The capital of Spain is Madrid. The capital of Japan is Tokyo. The capital of Australia is Canberra. The capital of Canada is Ottawa. The capital of Brazil is Brasilia. The"
