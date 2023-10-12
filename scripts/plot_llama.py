@@ -2,7 +2,6 @@
 
 import sys
 import matplotlib.pyplot as plt
-import numpy as np
 
 data={}
 
@@ -30,6 +29,7 @@ def main():
 
     output_plot()
     batch_plot()
+    overall_plot()
                 
 def data_collect(filename, batch, output):
     time = 0.0
@@ -80,6 +80,37 @@ def batch_plot():
         plt.plot(x, y, label="Execution time when output size is {}".format(output), marker="o")
         plt.savefig("{}/fig/llama-output-{}.svg".format(tmp_dir, output))
         output *= 2
+
+def overall_plot():
+    batch = batch_initial
+    x = []
+    y = []
+    while batch <= batch_max:
+        output = output_initial
+        if not batch in [2, 8, 32, 128]:
+            batch *= 2
+            continue
+        while output <= output_max:
+            if not output in [2, 8, 32, 128, 512]:
+                output *= 2
+                continue
+            
+            x.append((batch, output))
+            y.append(data[(batch, output)])
+            output *= 2
+        
+        batch *= 2
+
+    plt.figure()
+    plt.xlabel("(batch size, output size)")
+    plt.ylabel("time (ms)")
+    label_x = ["({}, {})".format(i[0], i[1]) for i in x]
+    plt.xticks([i for i in range(len(x))], label_x)
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+    plt.plot(label_x, y, label="Execution time", marker="o")
+    plt.savefig("{}/fig/llama-overall.svg".format(tmp_dir))
+            
 
 if __name__ == '__main__':
     main()

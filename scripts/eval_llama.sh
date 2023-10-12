@@ -16,7 +16,7 @@ do
         config_file="${ROOT_DIR}/tmp/manifold_llama-"$batch"-"$output".ini"
         output_file="${ROOT_DIR}/tmp/manifold_llama-"$batch"-"$output".log"
         sed -r 's#^request_batch_size=[0-9]+#request_batch_size='"$batch"'#; s#^request_output_len=[0-9]+#request_output_len='"$output"'#' ${ROOT_DIR}/models/llama2/1-gpu/config.ini > $config_file
-        ./run_llama.sh "$config_file"  > "$output_file"
+        ${ROOT_DIR}/scripts/run_llama.sh "$config_file"  > "$output_file"
     done
 done
 
