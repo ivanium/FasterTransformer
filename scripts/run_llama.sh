@@ -6,11 +6,19 @@ ROOT_DIR=$( cd -- "$SCRIPT_DIR/.." &> /dev/null && pwd )
 
 CONTAINER_NAME=manifold-dev-${USER}
 
-if grep -q docker /proc/1/cgroup;
+#if grep -q docker /proc/1/cgroup;
+if [ -f /.dockerenv ];
 then
   echo "Inside docker"
   pushd /FasterTransformer/build
-  ./bin/llama_example /FasterTransformer/models/llama2/1-gpu/config.ini
+  # ./bin/mnfd_llama /FasterTransformer/models/llama2/1-gpu/config.ini
+  if [ "$#" -eq 2 ]; then
+    echo "Running mnfd_llama with "$1""
+    ./bin/mnfd_llama "$1"
+  else
+    echo "Running mnfd_llama with default config.ini"
+    ./bin/mnfd_llama /FasterTransformer/models/llama2/1-gpu/config.ini
+  fi
   popd
   # decode output tokens
   python3 ${ROOT_DIR}/examples/utils/hf_detokenize.py ${ROOT_DIR}/build/out
