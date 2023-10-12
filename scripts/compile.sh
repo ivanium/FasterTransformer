@@ -8,7 +8,8 @@ CONTAINER_NAME=manifold-dev-${USER}
 
 DSM_NUMBER=75 # For T4, it's 75; for A100, it's 80
 
-if grep -q docker /proc/1/cgroup;
+# if grep -q docker /proc/1/cgroup;
+if [ -f /.dockerenv ];
 then
   echo "Inside docker"
   if [[ ! -d ${ROOT_DIR}/build ]];
