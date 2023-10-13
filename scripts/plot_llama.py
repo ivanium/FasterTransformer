@@ -55,9 +55,11 @@ def output_plot():
         plt.figure()
         plt.xlabel("output size")
         plt.ylabel("time (ms)")
-        plt.xscale("log", base=2)
-        plt.xticks(x, x)
-        plt.plot(x, y, label="Execution time when batch size is {}".format(batch), marker="o")
+        label_x = ["{}".format(i) for i in x]
+        plt.xticks([i for i in range(len(label_x))], label_x)
+        plt.bar(label_x, y, label="Execution time when batch size is {}".format(batch))
+        plt.title("Execution time when batch size is {}".format(batch))
+        plt.tight_layout()
         plt.savefig("{}/fig/llama-batch-{}.svg".format(tmp_dir, batch))
         batch *= 2
 
@@ -75,9 +77,11 @@ def batch_plot():
         plt.figure()
         plt.xlabel("batch size")
         plt.ylabel("time (ms)")
-        plt.xscale("log", base=2)
-        plt.xticks(x, x)
-        plt.plot(x, y, label="Execution time when output size is {}".format(output), marker="o")
+        label_x = ["{}".format(i) for i in x]
+        plt.xticks([i for i in range(len(label_x))], label_x)
+        plt.bar(label_x, y, label="Execution time when output size is {}".format(output))
+        plt.title("Execution time when output size is {}".format(output))
+        plt.tight_layout()
         plt.savefig("{}/fig/llama-output-{}.svg".format(tmp_dir, output))
         output *= 2
 
@@ -87,7 +91,7 @@ def overall_plot():
     y = []
     while batch <= batch_max:
         output = output_initial
-        if not batch in [2, 8, 32, 128]:
+        if not batch in [1, 4, 16, 64]:
             batch *= 2
             continue
         while output <= output_max:
@@ -107,8 +111,9 @@ def overall_plot():
     label_x = ["({}, {})".format(i[0], i[1]) for i in x]
     plt.xticks([i for i in range(len(x))], label_x)
     plt.xticks(rotation=90)
-    plt.tight_layout()
     plt.plot(label_x, y, label="Execution time", marker="o")
+    plt.title("Execution time")
+    plt.tight_layout()
     plt.savefig("{}/fig/llama-overall.svg".format(tmp_dir))
             
 
