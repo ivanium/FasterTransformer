@@ -12,7 +12,7 @@ then
   echo "Inside docker"
   pushd /FasterTransformer/build
   # ./bin/mnfd_llama /FasterTransformer/models/llama2/1-gpu/config.ini
-  if [ "$#" -eq 2 ]; then
+  if [ "$#" -eq 1 ]; then
     echo "Running mnfd_llama with "$1""
     ./bin/mnfd_llama "$1"
   else
