@@ -1082,19 +1082,20 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
                     controller->ctrl_plane.send(pe,
                                                 output_ids_buf_ + step * batch_size * beam_width,
                                                 pipeline_para_.rank_,
-                                                sizeof(T) * batch_size * beam_width,
+                                                sizeof(output_ids_buf_[0]) * batch_size * beam_width,
                                                 stream_);
                     controller->ctrl_plane.send(
-                        pe, sequence_lengths_, pipeline_para_.rank_, sizeof(T) * batch_size * beam_width, stream_);
+                        pe, sequence_lengths_, pipeline_para_.rank_, sizeof(sequence_lengths_[0]) * batch_size * beam_width, stream_);
                     controller->ctrl_plane.send(
                         pe, generation_should_stop_, pipeline_para_.rank_, sizeof(*generation_should_stop_), stream_);
                 }
             }
             else {  // bcase recv
                 auto worker = GetWorker(pipeline_para_.rank_);
-                worker->recv(
-                    output_ids_buf_ + step * batch_size * beam_width, sizeof(T) * batch_size * beam_width, stream_);
-                worker->recv(sequence_lengths_, sizeof(T) * batch_size * beam_width, stream_);
+                worker->recv(output_ids_buf_ + step * batch_size * beam_width,
+                             sizeof(output_ids_buf_[0]) * batch_size * beam_width,
+                             stream_);
+                worker->recv(sequence_lengths_, sizeof(sequence_lengths_[0]) * batch_size * beam_width, stream_);
                 worker->recv(generation_should_stop_, sizeof(*generation_should_stop_), stream_);
             }
 
@@ -1107,14 +1108,16 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
                         controller->ctrl_plane.send(pe,
                                                     cache_indirections_[tgt_indir_idx],
                                                     pipeline_para_.rank_,
-                                                    sizeof(T) * batch_size * beam_width * max_output_seq_len,
+                                                    sizeof(cache_indirections_[tgt_indir_idx][0]) * batch_size
+                                                        * beam_width * max_output_seq_len,
                                                     stream_);
                     }
                 }
                 else {  // bcase recv
                     auto worker = GetWorker(pipeline_para_.rank_);
                     worker->recv(cache_indirections_[tgt_indir_idx],
-                                 sizeof(T) * batch_size * beam_width * max_output_seq_len,
+                                 sizeof(cache_indirections_[tgt_indir_idx][0]) * batch_size * beam_width
+                                     * max_output_seq_len,
                                  stream_);
                 }
             }
