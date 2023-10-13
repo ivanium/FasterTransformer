@@ -380,7 +380,7 @@ void LlamaContextDecoder<T>::forward(std::unordered_map<std::string, Tensor>*   
                 //            pipeline_para_,
                 //            stream_);
                 auto worker = GetWorker(pipeline_para_.rank_);
-                worker->recv(layer_input + data_size * tensor_para_.rank_, sizeof(T) * data_size, stream_);
+                worker->recv(layer_input + data_size * tensor_para_.rank_, sizeof(layer_input[0]) * data_size, stream_);
 
                 if (tensor_para_.world_size_ > 1) {
                     ftNcclAllGather(layer_input, layer_input, data_size, tensor_para_.rank_, tensor_para_, stream_);
@@ -560,7 +560,7 @@ void LlamaContextDecoder<T>::forward(std::unordered_map<std::string, Tensor>*   
                     controller->ctrl_plane.send(pipeline_para_.rank_ + 1,
                                                 layer_output + data_size * tensor_para_.rank_,
                                                 pipeline_para_.rank_,
-                                                sizeof(T) * data_size,
+                                                sizeof(layer_output[0]) * data_size,
                                                 stream_);
                 }
 
