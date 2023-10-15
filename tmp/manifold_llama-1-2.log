@@ -15,7 +15,7 @@ Writing 8 elements
     1   450  7483   310  7551   338  1522   823 
 
 zeroCount = 0
-[INFO] request_batch_size 1 beam_width 1 head_num 32 size_per_head 128 total_output_len 8 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 33.36 ms
-[INFO] request_batch_size 1 beam_width 1 head_num 32 size_per_head 128 total_output_len 8 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 33.36 ms
+[INFO] request_batch_size 1 beam_width 1 head_num 32 size_per_head 128 total_output_len 8 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 32.90 ms
+[INFO] request_batch_size 1 beam_width 1 head_num 32 size_per_head 128 total_output_len 8 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 32.90 ms
 /home/gedatsu/FasterTransformer/scripts
 "<s> The capital of China is Beij"

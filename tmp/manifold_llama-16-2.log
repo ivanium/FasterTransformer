@@ -15,8 +15,8 @@ Writing 128 elements
     1   450  7483   310  7551   338  1522   823 
     1   450 
 zeroCount = 0
-[INFO] request_batch_size 16 beam_width 1 head_num 32 size_per_head 128 total_output_len 8 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 49.31 ms
-[INFO] request_batch_size 16 beam_width 1 head_num 32 size_per_head 128 total_output_len 8 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 49.31 ms
+[INFO] request_batch_size 16 beam_width 1 head_num 32 size_per_head 128 total_output_len 8 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 41.04 ms
+[INFO] request_batch_size 16 beam_width 1 head_num 32 size_per_head 128 total_output_len 8 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 41.05 ms
 /home/gedatsu/FasterTransformer/scripts
 "<s> The capital of China is Beij"
 "<s> The capital of China is Beij"
@@ -26,11 +26,11 @@ zeroCount = 0
 "<s> The capital of China is Beij"
 "<s> The capital of China is Beij"
 "<s> The capital of China is Beij"
-"<s> The capital of China is Be Hinweis"
-"<s> The capital of China is Be Hinweis"
-"<s> The capital of China is Be Hinweis"
-"</s></s></s></s></s></s><s><s>"
-"</s></s></s></s></s></s><s><s>"
-"</s></s></s></s></s></s><s><s>"
-"</s></s></s></s></s></s><s><s>"
-"</s></s></s></s></s></s><s><s>"
+"<s> The capital of China is Beij"
+"<s> The capital of China is Beij"
+"<s> The capital of China is Beij"
+"<s> The capital of China is Beij"
+"<s> The capital of China is Beij"
+"<s> The capital of China is Beij"
+"<s> The capital of China is Beij"
+"<s> The capital of China is Beij"

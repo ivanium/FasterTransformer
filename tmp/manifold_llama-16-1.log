@@ -15,8 +15,8 @@ Writing 112 elements
     1   450  7483   310  7551   338  1522 
     1   450  7483 
 zeroCount = 0
-[INFO] request_batch_size 16 beam_width 1 head_num 32 size_per_head 128 total_output_len 7 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 27.54 ms
-[INFO] request_batch_size 16 beam_width 1 head_num 32 size_per_head 128 total_output_len 7 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 27.51 ms
+[INFO] request_batch_size 16 beam_width 1 head_num 32 size_per_head 128 total_output_len 7 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 19.32 ms
+[INFO] request_batch_size 16 beam_width 1 head_num 32 size_per_head 128 total_output_len 7 decoder_layers 32 vocab_size 32000 FT-CPP-decoding-beamsearch-time 19.32 ms
 /home/gedatsu/FasterTransformer/scripts
 "<s> The capital of China is Be"
 "<s> The capital of China is Be"
@@ -29,8 +29,8 @@ zeroCount = 0
 "<s> The capital of China is Be"
 "<s> The capital of China is Be"
 "<s> The capital of China is Be"
-"</s></s></s></s></s></s><s>"
-"</s></s></s></s></s></s><s>"
-"</s></s></s></s></s></s><s>"
-"</s></s></s></s></s></s><s>"
-"</s></s></s></s></s></s><s>"
+"<s> The capital of China is Be"
+"<s> The capital of China is Be"
+"<s> The capital of China is Be"
+"<s> The capital of China is Be"
+"<s> The capital of China is Be"
