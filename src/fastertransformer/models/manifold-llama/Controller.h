@@ -18,43 +18,56 @@ class Worker {
 public:
     Worker(int tid): tid_(tid), active_(true), recv_buf_(nullptr), recv_size_(0) {}
 
-    bool active() const noexcept
-    {
-        return active_;
-    }
-
     void wait()
     {
         cudaDeviceSynchronize();
-        active_ = false;
         std::unique_lock<std::mutex> ul(mtx_);
-        while (!active_) {
-            cv_.wait(ul);
-        }
+        if (!active_) already_notified_ = true;
+        //cv_.wait(ul, []{return !active_;});
     }
 
     void notify()
     {
         {
             std::lock_guard<std::mutex> lg(mtx_);
-            active_ = true;
+            active_ = false;
         }
         cv_.notify_all();
     }
 
+    void send(int peer, void* src, int mype, size_t src_size, cudaStream_t stream) {
+        {
+            std::unique_lock<std::mutex> ul(mtx_);
+            cv_.wait(ul, [this]{return !active_;});
+        }
+
+        if (src_size > recv_size_) {
+            std::cerr << "Dst buffer is too small!" << std::endl;
+            exit(-1);
+        }
+
+        cudaStreamSynchronize(stream);
+        cudaMemcpyPeerAsync(recv_buf_, peer, src, mype, src_size, stream);
+        cudaStreamSynchronize(stream);
+        set_recv_buf(nullptr, 0);
+        {
+            std::lock_guard<std::mutex> lg(mtx_);
+            active_ = true;
+        }
+    }
+
     void recv(void* recv_buf, size_t recv_size, cudaStream_t stream)
+    {        
+        set_recv_buf(recv_buf, recv_size);
+        cudaStreamSynchronize(stream);
+        notify();
+        cudaStreamSynchronize(stream);
+    }
+
+    void set_recv_buf(void* recv_buf, size_t recv_size)
     {
-        assert(active_);
         recv_buf_  = recv_buf;
         recv_size_ = recv_size;
-        cudaStreamSynchronize(stream);
-        // cudaDeviceSynchronize();
-        wait();
-        cudaStreamSynchronize(stream);
-        // cudaDeviceSynchronize();
-
-        recv_buf_  = nullptr;
-        recv_size_ = 0;
     }
 
     void set_model(void* model)
@@ -79,7 +92,7 @@ private:
     std::mutex                   mtx_;
     std::condition_variable      cv_;
     std::unique_ptr<std::thread> thd_;
-
+    bool already_notified_ = false;
     bool active_ = false;
 };
 
@@ -91,7 +104,7 @@ public:
             workers_.emplace_back(std::make_unique<Worker>(tid));
         }
     }
-
+    /*
     void send(int peer, void* src, int mype, size_t src_size, cudaStream_t stream)
     {
         auto& worker = workers_[peer];
@@ -113,6 +126,7 @@ public:
         // cudaDeviceSynchronize();
         worker->notify();
     }
+    */
 
     Worker* getWorker(int pe)
     {

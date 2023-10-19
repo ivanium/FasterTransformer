@@ -376,7 +376,8 @@ void LlamaDecoder<T>::forward(std::unordered_map<std::string, Tensor>*        ou
             //            pipeline_para_,
             //            stream_);
             auto controller = GlobalController();
-            controller->ctrl_plane.send(pipeline_para_.rank_ + 1,
+            auto worker = GetWorker(pipeline_para_.rank_);
+            worker->send(pipeline_para_.rank_ + 1,
                                         layer_output + data_size * tensor_para_.rank_,
                                         pipeline_para_.rank_,
                                         sizeof(layer_output[0]) * data_size,

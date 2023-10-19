@@ -1076,17 +1076,18 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
 
             if (pipeline_para_.rank_ == pipeline_para_.world_size_ - 1) {  // bcast send
                 auto controller = GlobalController();
+                auto worker = GetWorker(pipeline_para_.rank_);
                 for (int pe = 0; pe < pipeline_para_.world_size_; pe++) {
                     if (pe == pipeline_para_.rank_)
                         continue;
-                    controller->ctrl_plane.send(pe,
+                    worker->send(pe,
                                                 output_ids_buf_ + step * batch_size * beam_width,
                                                 pipeline_para_.rank_,
                                                 sizeof(output_ids_buf_[0]) * batch_size * beam_width,
                                                 stream_);
-                    controller->ctrl_plane.send(
+                    worker->send(
                         pe, sequence_lengths_, pipeline_para_.rank_, sizeof(sequence_lengths_[0]) * batch_size * beam_width, stream_);
-                    controller->ctrl_plane.send(
+                    worker->send(
                         pe, generation_should_stop_, pipeline_para_.rank_, sizeof(*generation_should_stop_), stream_);
                 }
             }
@@ -1102,10 +1103,11 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
             if (beam_width > 1) {
                 if (pipeline_para_.rank_ == pipeline_para_.world_size_ - 1) {  // bcast send
                     auto controller = GlobalController();
+                    auto worker = GetWorker(pipeline_para_.rank_);
                     for (int pe = 0; pe < pipeline_para_.world_size_; pe++) {
                         if (pe == pipeline_para_.rank_)
                             continue;
-                        controller->ctrl_plane.send(pe,
+                        worker->send(pe,
                                                     cache_indirections_[tgt_indir_idx],
                                                     pipeline_para_.rank_,
                                                     sizeof(cache_indirections_[tgt_indir_idx][0]) * batch_size
@@ -1199,7 +1201,8 @@ void Llama<T>::sendTensorsToFirstPipelineNode(std::unordered_map<std::string, Te
         }
         if (pp_rank == pipeline_para_.world_size_ - 1) {
             auto controller = GlobalController();
-            controller->ctrl_plane.send(0, it.second.getPtr<char>(), pp_rank, it.second.sizeBytes(), stream_);
+            auto worker = GetWorker(pp_rank);
+            worker->send(0, it.second.getPtr<char>(), pp_rank, it.second.sizeBytes(), stream_);
         }
         else if (pp_rank == 0) {
             auto worker = GetWorker(pp_rank);
