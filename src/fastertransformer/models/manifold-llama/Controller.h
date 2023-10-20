@@ -9,6 +9,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <queue>
 
 #include <cuda.h>
 
@@ -26,8 +27,8 @@ public:
     void wait()
     {
         cudaDeviceSynchronize();
-        active_ = false;
         std::unique_lock<std::mutex> ul(mtx_);
+        active_ = false;
         cv_.wait(ul, [this] { return active_; });
     }
 
@@ -42,7 +43,7 @@ public:
 
     void send(int peer, void* src, int mype, size_t src_size, cudaStream_t stream)
     {
-        while (active()) {
+        while (active_) {
             std::this_thread::yield();
         }
         
@@ -74,6 +75,31 @@ public:
         recv_size_ = 0;
     }
 
+    void recv_async(void* recv_buf, size_t recv_size, cudaStream_t stream)
+    {
+        recv_buf_queue_.push({recv_buf, recv_size});
+    }
+    /*
+    void send_async(int peer, void* src, size_t src_size, cudaStream_t stream)
+    {
+        printf("send_async\n");
+        while (GetWorker(peer).recv_buf_queue_.empty()) {
+            std::this_thread::yield();
+        }
+        printf("send_async after yield\n");
+        auto recv_buf_pair = recv_buf_queue_.front();
+        recv_buf_queue_.pop();
+        void* recv_buf_ = recv_buf_pair.first;
+        size_t recv_size_ = recv_buf_pair.second;
+        
+        //auto [recv_buf, recv_size] = queue_recv_buf_.front();
+        if (src_size > recv_size_) {
+            std::cerr << "Dst buffer is too small!" << std::endl;
+            exit(-1);
+        }        
+        cudaMemcpyPeerAsync(recv_buf_, peer, src, tid_, src_size, stream);
+    }*/
+
     void set_model(void* model)
     {
         model_ = model;
@@ -88,6 +114,8 @@ public:
     void*  recv_buf_   = nullptr;
     size_t recv_size_  = 0;
     size_t recvd_size_ = 0;
+
+    std::queue<std::pair<void*, size_t>> recv_buf_queue_;
 
 private:
     void* model_;
@@ -107,8 +135,27 @@ public:
         for (int tid = 0; tid < nr_thds; tid++) {
             workers_.emplace_back(std::make_unique<Worker>(tid));
         }
+        pthread_barrier_init(&barrier_, NULL, nr_thds);
     }
 
+    void send_async(int peer, void* src, int mype, size_t src_size, cudaStream_t stream)
+    {
+        auto& worker = workers_[peer];
+        while (worker->recv_buf_queue_.empty()) {
+            std::this_thread::yield();
+        }
+        auto recv_buf_pair = worker->recv_buf_queue_.front();
+        worker->recv_buf_queue_.pop();
+        void* recv_buf_ = recv_buf_pair.first;
+        size_t recv_size_ = recv_buf_pair.second;
+        
+        //auto [recv_buf, recv_size] = queue_recv_buf_.front();
+        if (src_size > recv_size_) {
+            std::cerr << "Dst buffer is too small!" << std::endl;
+            exit(-1);
+        }        
+        cudaMemcpyPeerAsync(recv_buf_, peer, src, mype, src_size, stream);
+    }
 
     Worker* getWorker(int pe)
     {
@@ -116,9 +163,15 @@ public:
         return workers_[pe].get();
     }
 
+    void barrier()
+    {
+        pthread_barrier_wait(&barrier_);
+    }
+
 private:
     int                                  nr_thds_;
     std::vector<std::unique_ptr<Worker>> workers_;
+    pthread_barrier_t                    barrier_;
 };
 
 class Controller {

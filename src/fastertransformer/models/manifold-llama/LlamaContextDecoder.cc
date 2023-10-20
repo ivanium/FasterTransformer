@@ -556,7 +556,7 @@ void LlamaContextDecoder<T>::forward(std::unordered_map<std::string, Tensor>*   
                     //            pipeline_para_.rank_ + 1,
                     //            pipeline_para_,
                     //            stream_);
-                    auto controller = GlobalController();
+                    //auto controller = GlobalController();
                     auto worker = GetWorker(pipeline_para_.rank_ + 1);
                     worker->send(pipeline_para_.rank_ + 1,
                                                 layer_output + data_size * tensor_para_.rank_,
