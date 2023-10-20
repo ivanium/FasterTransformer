@@ -33,7 +33,7 @@ public:
 
     void recv_async(void* recv_buf, size_t recv_size, cudaStream_t stream);
 
-    //void send_async(int peer, void* src, size_t src_size, cudaStream_t stream);
+    void send_async(int peer, void* src, size_t src_size, cudaStream_t stream);
 
     void set_model(void* model);
 

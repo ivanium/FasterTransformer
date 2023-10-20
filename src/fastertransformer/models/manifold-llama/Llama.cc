@@ -1075,20 +1075,19 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
             // sync_check_cuda_error();
 
             if (pipeline_para_.rank_ == pipeline_para_.world_size_ - 1) {  // bcast send
-                auto controller = GlobalController();
+                //auto controller = GlobalController();
                 for (int pe = 0; pe < pipeline_para_.world_size_; pe++) {
                     if (pe == pipeline_para_.rank_)
                         continue;
-                    //auto worker = GetWorker(pipeline_para_.rank_);
-                    controller->ctrl_plane.send_async(pe,
+                    auto worker = GetWorker(pipeline_para_.rank_);
+                    worker->send_async(pe,
                                                 output_ids_buf_ + step * batch_size * beam_width,
-                                                pipeline_para_.rank_,
                                                 sizeof(output_ids_buf_[0]) * batch_size * beam_width,
                                                 stream_);
-                    controller->ctrl_plane.send_async(
-                        pe, sequence_lengths_, pipeline_para_.rank_, sizeof(sequence_lengths_[0]) * batch_size * beam_width, stream_);
-                    controller->ctrl_plane.send_async(
-                        pe, generation_should_stop_, pipeline_para_.rank_, sizeof(*generation_should_stop_), stream_);
+                    worker->send_async(
+                        pe, sequence_lengths_, sizeof(sequence_lengths_[0]) * batch_size * beam_width, stream_);
+                    worker->send_async(
+                        pe, generation_should_stop_, sizeof(*generation_should_stop_), stream_);
                 }
             }
             else {  // bcase recv
@@ -1099,9 +1098,10 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
                 worker->recv_async(sequence_lengths_, sizeof(sequence_lengths_[0]) * batch_size * beam_width, stream_);
                 worker->recv_async(generation_should_stop_, sizeof(*generation_should_stop_), stream_);
             }
-
+            printf("hello\n");
             GlobalController()->ctrl_plane.barrier();
             cudaStreamSynchronize(stream_);
+            printf("hello\n");
 
 
             if (beam_width > 1) {
