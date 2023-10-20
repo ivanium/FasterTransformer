@@ -19,10 +19,16 @@ set_property(TARGET MnfdLlamaDecoderLayerWeight PROPERTY POSITION_INDEPENDENT_CO
 set_property(TARGET MnfdLlamaDecoderLayerWeight PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS  ON)
 target_link_libraries(MnfdLlamaDecoderLayerWeight PUBLIC memory_utils cuda_utils logger)
 
+add_library(MnfdController STATIC Controller.cc)
+set_property(TARGET MnfdController PROPERTY POSITION_INDEPENDENT_CODE  ON)
+set_property(TARGET MnfdController PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS  ON)
+target_link_libraries(MnfdController PUBLIC -lcudart logger)
+
 add_library(MnfdLlamaDecoder STATIC LlamaDecoder.cc)
 set_property(TARGET MnfdLlamaDecoder PROPERTY POSITION_INDEPENDENT_CODE  ON)
 set_property(TARGET MnfdLlamaDecoder PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS  ON)
 target_link_libraries(MnfdLlamaDecoder PUBLIC -lcudart cublasMMWrapper
+                      MnfdController
                       TensorParallelDecoderSelfAttentionLayer
                       TensorParallelSiluFfnLayer
                       layernorm_kernels
@@ -37,6 +43,7 @@ add_library(MnfdLlamaContextDecoder STATIC LlamaContextDecoder.cc)
 set_property(TARGET MnfdLlamaContextDecoder PROPERTY POSITION_INDEPENDENT_CODE  ON)
 set_property(TARGET MnfdLlamaContextDecoder PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS  ON)
 target_link_libraries(MnfdLlamaContextDecoder PUBLIC -lcudart cublasMMWrapper
+                      MnfdController
                       TensorParallelGptContextAttentionLayer
                       TensorParallelSiluFfnLayer
                       layernorm_kernels
@@ -58,6 +65,7 @@ set_property(TARGET MnfdLlama PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS  ON)
 target_link_libraries(MnfdLlama PUBLIC -lcudart
                       MnfdLlamaDecoder
                       MnfdLlamaContextDecoder
+                      MnfdController
                       decoding_kernels
                       gpt_kernels
                       DynamicDecodeLayer
