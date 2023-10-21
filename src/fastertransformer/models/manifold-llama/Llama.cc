@@ -1074,14 +1074,11 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
             // ftNcclStreamSynchronize(tensor_para_, pipeline_para_, stream_);
             // sync_check_cuda_error();
 
+            auto worker = GetWorker(pipeline_para_.rank_);
             if (pipeline_para_.rank_ == pipeline_para_.world_size_ - 1) {  // bcast send
-                //auto controller = GlobalController();
                 for (int pe = 0; pe < pipeline_para_.world_size_; pe++) {
                     if (pe == pipeline_para_.rank_)
-                        continue;
-                    auto worker = GetWorker(pipeline_para_.rank_);
-                    printf("if; worker addr %p\n", worker);
-                    printf("%d, %d\n", pipeline_para_.rank_, worker->tid_);
+                        continue;                    
                     worker->send_async(pe,
                                                 output_ids_buf_ + step * batch_size * beam_width,
                                                 sizeof(output_ids_buf_[0]) * batch_size * beam_width,
@@ -1093,43 +1090,37 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
                 }
             }
             else {  // bcase recv
-                auto worker = GetWorker(pipeline_para_.rank_);
-                printf("YIFAN: %d, %d\n", worker->tid_, pipeline_para_.rank_);
-                printf("else; worker addr %p\n", worker);
                 worker->recv_async(output_ids_buf_ + step * batch_size * beam_width,
                              sizeof(output_ids_buf_[0]) * batch_size * beam_width,
                              stream_);
                 worker->recv_async(sequence_lengths_, sizeof(sequence_lengths_[0]) * batch_size * beam_width, stream_);
                 worker->recv_async(generation_should_stop_, sizeof(*generation_should_stop_), stream_);
             }
-            printf("hello\n");
+
             GlobalController()->ctrl_plane.barrier();
             cudaStreamSynchronize(stream_);
-            printf("hello\n");
 
 
             if (beam_width > 1) {
                 if (pipeline_para_.rank_ == pipeline_para_.world_size_ - 1) {  // bcast send
-                    //auto controller = GlobalController();
                     for (int pe = 0; pe < pipeline_para_.world_size_; pe++) {
                         if (pe == pipeline_para_.rank_)
                             continue;
-                        auto worker = GetWorker(pe);
-                        worker->send(pe,
+                        worker->send_async(pe,
                                                     cache_indirections_[tgt_indir_idx],
-                                                    pipeline_para_.rank_,
                                                     sizeof(cache_indirections_[tgt_indir_idx][0]) * batch_size
                                                         * beam_width * max_output_seq_len,
                                                     stream_);
                     }
                 }
                 else {  // bcase recv
-                    auto worker = GetWorker(pipeline_para_.rank_);
-                    worker->recv(cache_indirections_[tgt_indir_idx],
+                    worker->recv_async(cache_indirections_[tgt_indir_idx],
                                  sizeof(cache_indirections_[tgt_indir_idx][0]) * batch_size * beam_width
                                      * max_output_seq_len,
                                  stream_);
                 }
+                GlobalController()->ctrl_plane.barrier();
+                cudaStreamSynchronize(stream_);
             }
         }
 
@@ -1208,15 +1199,15 @@ void Llama<T>::sendTensorsToFirstPipelineNode(std::unordered_map<std::string, Te
             continue;
         }
         if (pp_rank == pipeline_para_.world_size_ - 1) {
-            //auto controller = GlobalController();
-            auto worker = GetWorker(0);
-            worker->send(0, it.second.getPtr<char>(), pp_rank, it.second.sizeBytes(), stream_);
+            auto worker = GetWorker(pp_rank);
+            worker->send_async(0, it.second.getPtr<char>(), it.second.sizeBytes(), stream_);
         }
         else if (pp_rank == 0) {
             auto worker = GetWorker(pp_rank);
-            worker->recv(it.second.getPtr<char>(), it.second.sizeBytes(), stream_);
+            worker->recv_async(it.second.getPtr<char>(), it.second.sizeBytes(), stream_);
         }
     }
+    GlobalController()->ctrl_plane.barrier();
     cudaStreamSynchronize(stream_);
 }
 

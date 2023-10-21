@@ -84,7 +84,7 @@ private:
     int nr_thds_;
 };
 
-static inline Controller* GlobalController() noexcept
+inline Controller* GlobalController() noexcept
 {
     static std::mutex                  mtx_;
     static std::unique_ptr<Controller> controller_;
@@ -101,7 +101,7 @@ static inline Controller* GlobalController() noexcept
     return controller_.get();
 }
 
-static inline Worker* GetWorker(int pe) noexcept
+inline Worker* GetWorker(int pe) noexcept
 {
     auto controller = GlobalController();
     if (!controller)

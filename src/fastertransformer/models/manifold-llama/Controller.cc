@@ -62,31 +62,18 @@ void Worker::recv(void* recv_buf, size_t recv_size, cudaStream_t stream)
 
 void Worker::recv_async(void* recv_buf, size_t recv_size, cudaStream_t stream)
 {
-    auto worker = GetWorker(tid_);
-    printf("recv: worker addr %p, this addr %p\n", worker, this);
-    worker->recv_buf_queue_.push({recv_buf, recv_size});
-
-    //recv_buf_queue_.push({recv_buf, recv_size});
-
-    //printf("%d, addr %p\n", tid_, &recv_buf_queue_);
-    //printf("addr %p\n", &worker->recv_buf_queue_);
-
-    
-    //printf("recv ptr : %p\n", &recv_buf_queue_);
-    //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    recv_buf_queue_.push({recv_buf, recv_size});
 }
 
 void Worker::send_async(int peer, void* src, size_t src_size, cudaStream_t stream)
 {
-    auto worker = GetWorker(peer);
-    printf("send: worker addr %p, this addr %p\n", worker, this);
-    //printf("send ptr : %p\n", &worker->recv_buf_queue_);
-    while (worker->recv_buf_queue_.empty()) {
+    auto peer_worker = GetWorker(peer);
+    while (peer_worker->recv_buf_queue_.empty()) {
         std::this_thread::yield();
     }
-    //printf("not empty\n");
-    auto recv_buf_pair = worker->recv_buf_queue_.front();
-    worker->recv_buf_queue_.pop();
+    
+    auto recv_buf_pair = peer_worker->recv_buf_queue_.front();
+    peer_worker->recv_buf_queue_.pop();
     void* recv_buf_ = recv_buf_pair.first;
     size_t recv_size_ = recv_buf_pair.second;
     
@@ -116,25 +103,6 @@ ControlPlane::ControlPlane(int nr_thds): nr_thds_(nr_thds)
     pthread_barrier_init(&barrier_, NULL, nr_thds);
 }
 
-void ControlPlane::send_async(int peer, void* src, int mype, size_t src_size, cudaStream_t stream)
-{
-    auto& worker = workers_[peer];
-    while (worker->recv_buf_queue_.empty()) {
-        std::this_thread::yield();
-    }
-    auto recv_buf_pair = worker->recv_buf_queue_.front();
-    worker->recv_buf_queue_.pop();
-    void* recv_buf_ = recv_buf_pair.first;
-    size_t recv_size_ = recv_buf_pair.second;
-    
-    //auto [recv_buf, recv_size] = queue_recv_buf_.front();
-    if (src_size > recv_size_) {
-        std::cerr << "Dst buffer is too small!" << std::endl;
-        exit(-1);
-    }        
-    cudaMemcpyPeerAsync(recv_buf_, peer, src, mype, src_size, stream);
-}
-
 Worker* ControlPlane::getWorker(int pe)
 {
     assert(pe < workers_.size());
@@ -145,7 +113,6 @@ void ControlPlane::barrier()
 {
     pthread_barrier_wait(&barrier_);
 }
-
 
 Controller::Controller(int nr_thds): nr_thds_(nr_thds), ctrl_plane(nr_thds) {}
 
