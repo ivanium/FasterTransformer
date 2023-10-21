@@ -1080,6 +1080,8 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
                     if (pe == pipeline_para_.rank_)
                         continue;
                     auto worker = GetWorker(pipeline_para_.rank_);
+                    printf("if; worker addr %p\n", worker);
+                    printf("%d, %d\n", pipeline_para_.rank_, worker->tid_);
                     worker->send_async(pe,
                                                 output_ids_buf_ + step * batch_size * beam_width,
                                                 sizeof(output_ids_buf_[0]) * batch_size * beam_width,
@@ -1092,6 +1094,8 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
             }
             else {  // bcase recv
                 auto worker = GetWorker(pipeline_para_.rank_);
+                printf("YIFAN: %d, %d\n", worker->tid_, pipeline_para_.rank_);
+                printf("else; worker addr %p\n", worker);
                 worker->recv_async(output_ids_buf_ + step * batch_size * beam_width,
                              sizeof(output_ids_buf_[0]) * batch_size * beam_width,
                              stream_);

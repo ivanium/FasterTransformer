@@ -62,15 +62,29 @@ void Worker::recv(void* recv_buf, size_t recv_size, cudaStream_t stream)
 
 void Worker::recv_async(void* recv_buf, size_t recv_size, cudaStream_t stream)
 {
-    recv_buf_queue_.push({recv_buf, recv_size});
+    auto worker = GetWorker(tid_);
+    printf("recv: worker addr %p, this addr %p\n", worker, this);
+    worker->recv_buf_queue_.push({recv_buf, recv_size});
+
+    //recv_buf_queue_.push({recv_buf, recv_size});
+
+    //printf("%d, addr %p\n", tid_, &recv_buf_queue_);
+    //printf("addr %p\n", &worker->recv_buf_queue_);
+
+    
+    //printf("recv ptr : %p\n", &recv_buf_queue_);
+    //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 }
 
 void Worker::send_async(int peer, void* src, size_t src_size, cudaStream_t stream)
 {
     auto worker = GetWorker(peer);
+    printf("send: worker addr %p, this addr %p\n", worker, this);
+    //printf("send ptr : %p\n", &worker->recv_buf_queue_);
     while (worker->recv_buf_queue_.empty()) {
         std::this_thread::yield();
     }
+    //printf("not empty\n");
     auto recv_buf_pair = worker->recv_buf_queue_.front();
     worker->recv_buf_queue_.pop();
     void* recv_buf_ = recv_buf_pair.first;

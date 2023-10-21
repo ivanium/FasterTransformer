@@ -45,11 +45,12 @@ public:
     size_t recvd_size_ = 0;
 
     std::queue<std::pair<void*, size_t>> recv_buf_queue_;
+    int                          tid_;
 
 private:
     void*                       model_;
 
-    int                          tid_;
+    //int                          tid_;
     std::mutex                   mtx_;
     std::condition_variable      cv_;
     std::unique_ptr<std::thread> thd_;
@@ -91,8 +92,11 @@ static inline Controller* GlobalController() noexcept
     if (controller_)
         return controller_.get();
     int nr_thds;
-    check_cuda_error(cudaGetDeviceCount(&nr_thds));
+    
     std::lock_guard<std::mutex> lg(mtx_);
+    if (controller_)
+        return controller_.get();
+    check_cuda_error(cudaGetDeviceCount(&nr_thds));
     controller_ = std::make_unique<Controller>(nr_thds);
     return controller_.get();
 }
