@@ -47,12 +47,16 @@ public:
     std::queue<std::pair<void*, size_t>> recv_buf_queue_;
     int                          tid_;
 
+    std::mutex                   mtx__;
+    std::condition_variable      cv__;
+
 private:
     void*                       model_;
 
     //int                          tid_;
     std::mutex                   mtx_;
     std::condition_variable      cv_;
+    
     std::unique_ptr<std::thread> thd_;
 
     bool active_ = false;
@@ -67,6 +71,10 @@ public:
     Worker* getWorker(int pe);
 
     void barrier();
+
+    void broadcast(int tid, void* buf, size_t buf_size, int root, cudaStream_t stream);
+
+    void broadcast_end();
 
 private:
     int                                  nr_thds_;

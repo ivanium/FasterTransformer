@@ -1074,7 +1074,24 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
             // ftNcclStreamSynchronize(tensor_para_, pipeline_para_, stream_);
             // sync_check_cuda_error();
 
-            auto worker = GetWorker(pipeline_para_.rank_);
+            auto controller = GlobalController();
+            
+            controller->ctrl_plane.broadcast(pipeline_para_.rank_, output_ids_buf_ + step * batch_size * beam_width,
+                                 sizeof(output_ids_buf_[0]) * batch_size * beam_width,
+                                 pipeline_para_.world_size_ - 1,
+                                 stream_);
+            
+            controller->ctrl_plane.broadcast(pipeline_para_.rank_, sequence_lengths_,
+                                 sizeof(sequence_lengths_[0]) * batch_size * beam_width,
+                                 pipeline_para_.world_size_ - 1,
+                                 stream_);
+            
+            controller->ctrl_plane.broadcast(pipeline_para_.rank_, generation_should_stop_,
+                                 sizeof(*generation_should_stop_),
+                                 pipeline_para_.world_size_ - 1,
+                                 stream_);
+            
+            /*
             if (pipeline_para_.rank_ == pipeline_para_.world_size_ - 1) {  // bcast send
                 for (int pe = 0; pe < pipeline_para_.world_size_; pe++) {
                     if (pe == pipeline_para_.rank_)
@@ -1096,12 +1113,16 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
                 worker->recv_async(sequence_lengths_, sizeof(sequence_lengths_[0]) * batch_size * beam_width, stream_);
                 worker->recv_async(generation_should_stop_, sizeof(*generation_should_stop_), stream_);
             }
-
-            GlobalController()->ctrl_plane.barrier();
-            cudaStreamSynchronize(stream_);
+            */
 
 
             if (beam_width > 1) {
+                controller->ctrl_plane.broadcast(pipeline_para_.rank_, cache_indirections_[tgt_indir_idx],
+                                     sizeof(cache_indirections_[tgt_indir_idx][0]) * batch_size * beam_width
+                                         * max_output_seq_len,
+                                     pipeline_para_.world_size_ - 1,
+                                     stream_);
+                /*                     
                 if (pipeline_para_.rank_ == pipeline_para_.world_size_ - 1) {  // bcast send
                     for (int pe = 0; pe < pipeline_para_.world_size_; pe++) {
                         if (pe == pipeline_para_.rank_)
@@ -1119,9 +1140,13 @@ void Llama<T>::forward(std::unordered_map<std::string, Tensor>*       output_ten
                                      * max_output_seq_len,
                                  stream_);
                 }
-                GlobalController()->ctrl_plane.barrier();
-                cudaStreamSynchronize(stream_);
+                */
+                //GlobalController()->ctrl_plane.barrier();
+                //cudaStreamSynchronize(stream_);
             }
+
+            controller->ctrl_plane.broadcast_end();
+            cudaStreamSynchronize(stream_);
         }
 
         if (*generation_should_stop_) {
