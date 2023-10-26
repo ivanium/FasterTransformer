@@ -3,42 +3,54 @@
 import sys
 import matplotlib.pyplot as plt
 
-data={}
+data1={}
+data2={}
 
 def main():
-    global batch_initial, batch_max, output_initial, output_max, tmp_dir
+    global batch_initial, batch_max, output_initial, output_max, tmp1_dir, tmp2_dir
     args = sys.argv
-    if len(args) != 6:
-        print("Usage: python3 plot_llama.py <batch_intial> <batch_max> <output_initial> <output_max> <tmp_dir>")
+    if len(args) != 7:
+        print("Usage: python3 plot_llama.py <batch_intial> <batch_max> <output_initial> <output_max> <tmp1_dir> <tmp2_dir>")
         exit(1)
     
     batch_initial = int(args[1])
     batch_max = int(args[2])
     output_initial = int(args[3])
     output_max = int(args[4])
-    tmp_dir = args[5]
+    tmp1_dir = args[5]
+    tmp2_dir = args[6]
 
 
     batch = batch_initial
     while batch <= batch_max:
         output = output_initial
         while output <= output_max:
-            data_collect("{}/manifold_llama-{}-{}.log".format(tmp_dir, batch, output), batch, output)
+            data1_collect("{}/manifold_llama-{}-{}.log".format(tmp1_dir, batch, output), batch, output)
+            data2_collect("{}/manifold_llama-{}-{}.log".format(tmp2_dir, batch, output), batch, output)
             output *= 2
         batch *= 2
 
-    output_plot()
-    batch_plot()
+    #output_plot()
+    #batch_plot()
     overall_plot()
                 
-def data_collect(filename, batch, output):
+def data1_collect(filename, batch, output):
     time = 0.0
     with open(filename) as f:
         for line in f:
             if "FT-CPP-decoding-beamsearch-time" in line:
                 time += float(line.split()[-2])
     
-    data[(batch, output)] = time/4.0 # the number of GPUs
+    data1[(batch, output)] = time/4.0
+
+def data2_collect(filename, batch, output):
+    time = 0.0
+    with open(filename) as f:
+        for line in f:
+            if "FT-CPP-decoding-beamsearch-time" in line:
+                time += float(line.split()[-2])
+    
+    data2[(batch, output)] = time/4.0
                 
 
 def output_plot():
@@ -88,7 +100,9 @@ def batch_plot():
 def overall_plot():
     batch = batch_initial
     x = []
-    y = []
+    y1 = []
+    y2 = []
+    y=[]
     while batch <= batch_max:
         output = output_initial
         if not batch in [1, 4, 16, 64]:
@@ -100,21 +114,24 @@ def overall_plot():
                 continue
             
             x.append((batch, output))
-            y.append(data[(batch, output)])
+            #y1.append(data1[(batch, output)])
+            #y2.append(data2[(batch, output)])
+            y.append((data2[(batch, output)]-data1[(batch, output)])/data2[(batch, output)]*100)
             output *= 2
         
         batch *= 2
 
     plt.figure()
     plt.xlabel("(batch size, output size)")
-    plt.ylabel("time (ms)")
+    plt.ylabel("Performance improvement (%)")
     label_x = ["({}, {})".format(i[0], i[1]) for i in x]
     plt.xticks([i for i in range(len(x))], label_x)
     plt.xticks(rotation=90)
-    plt.plot(label_x, y, label="Execution time", marker="o")
+    plt.bar(label_x, y, width=0.7)
+    #plt.bar(label_x, y2, align="edge", width=0.3)
     plt.title("Execution time")
     plt.tight_layout()
-    plt.savefig("{}/fig/llama-overall.svg".format(tmp_dir))
+    plt.savefig("{}/fig/llama-overall_compare.svg".format(tmp1_dir))
             
 
 if __name__ == '__main__':
