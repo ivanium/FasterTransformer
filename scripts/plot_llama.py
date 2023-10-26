@@ -38,7 +38,7 @@ def data_collect(filename, batch, output):
             if "FT-CPP-decoding-beamsearch-time" in line:
                 time += float(line.split()[-2])
     
-    data[(batch, output)] = time/2.0
+    data[(batch, output)] = time/4.0 # the number of GPUs
                 
 
 def output_plot():

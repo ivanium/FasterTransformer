@@ -9,75 +9,54 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <queue>
 
 #include <cuda.h>
+
+#include "src/fastertransformer/utils/cuda_utils.h"
 
 namespace fastertransformer {
 
 class Worker {
 public:
-    Worker(int tid): tid_(tid), active_(true), recv_buf_(nullptr), recv_size_(0) {}
+    Worker(int tid);
 
-    bool active() const noexcept
-    {
-        return active_;
-    }
+    bool active() const noexcept;
 
-    void wait()
-    {
-        cudaDeviceSynchronize();
-        active_ = false;
-        std::unique_lock<std::mutex> ul(mtx_);
-        while (!active_) {
-            cv_.wait(ul);
-        }
-    }
+    void wait();
 
-    void notify()
-    {
-        {
-            std::lock_guard<std::mutex> lg(mtx_);
-            active_ = true;
-        }
-        cv_.notify_all();
-    }
+    void notify();
 
-    void recv(void* recv_buf, size_t recv_size, cudaStream_t stream)
-    {
-        assert(active_);
-        recv_buf_  = recv_buf;
-        recv_size_ = recv_size;
-        cudaStreamSynchronize(stream);
-        // cudaDeviceSynchronize();
-        wait();
-        cudaStreamSynchronize(stream);
-        // cudaDeviceSynchronize();
+    void send(int peer, void* src, int mype, size_t src_size, cudaStream_t stream);
 
-        recv_buf_  = nullptr;
-        recv_size_ = 0;
-    }
+    void recv(void* recv_buf, size_t recv_size, cudaStream_t stream);
 
-    void set_model(void* model)
-    {
-        model_ = model;
-    }
+    void recv_async(void* recv_buf, size_t recv_size, cudaStream_t stream);
+
+    void send_async(int peer, void* src, size_t src_size, cudaStream_t stream);
+
+    void set_model(void* model);
 
     template<typename T>
-    T* get_model() const noexcept
-    {
-        return reinterpret_cast<T*>(model_);
-    }
+    T* get_model() const noexcept;
 
     void*  recv_buf_   = nullptr;
     size_t recv_size_  = 0;
     size_t recvd_size_ = 0;
 
-private:
-    void* model_;
-
+    std::queue<std::pair<void*, size_t>> recv_buf_queue_;
     int                          tid_;
+
+    std::mutex                   mtx__;
+    std::condition_variable      cv__;
+
+private:
+    void*                       model_;
+
+    //int                          tid_;
     std::mutex                   mtx_;
     std::condition_variable      cv_;
+    
     std::unique_ptr<std::thread> thd_;
 
     bool active_ = false;
@@ -85,49 +64,27 @@ private:
 
 class ControlPlane {
 public:
-    ControlPlane(int nr_thds): nr_thds_(nr_thds)
-    {
-        for (int tid = 0; tid < nr_thds; tid++) {
-            workers_.emplace_back(std::make_unique<Worker>(tid));
-        }
-    }
+    ControlPlane(int nr_thds);
 
-    void send(int peer, void* src, int mype, size_t src_size, cudaStream_t stream)
-    {
-        auto& worker = workers_[peer];
+    void send_async(int peer, void* src, int mype, size_t src_size, cudaStream_t stream);
 
-        while (worker->active()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-        auto dst      = worker->recv_buf_;
-        auto dst_size = worker->recv_size_;
-        if (src_size > dst_size) {
-            std::cerr << "Dst buffer is too small!" << std::endl;
-            exit(-1);
-        }
+    Worker* getWorker(int pe);
 
-        cudaStreamSynchronize(stream);
-        // cudaDeviceSynchronize();
-        cudaMemcpyPeerAsync(dst, peer, src, mype, src_size, stream);
-        cudaStreamSynchronize(stream);
-        // cudaDeviceSynchronize();
-        worker->notify();
-    }
+    void barrier();
 
-    Worker* getWorker(int pe)
-    {
-        assert(pe < workers_.size());
-        return workers_[pe].get();
-    }
+    void broadcast(int tid, void* buf, size_t buf_size, int root, cudaStream_t stream);
+
+    void broadcast_end();
 
 private:
     int                                  nr_thds_;
     std::vector<std::unique_ptr<Worker>> workers_;
+    pthread_barrier_t                    barrier_;
 };
 
 class Controller {
 public:
-    Controller(int nr_thds): nr_thds_(nr_thds), ctrl_plane(nr_thds) {}
+    Controller(int nr_thds);
 
     ControlPlane ctrl_plane;
 
@@ -135,19 +92,24 @@ private:
     int nr_thds_;
 };
 
-static inline Controller* GlobalController() noexcept
+inline Controller* GlobalController() noexcept
 {
     static std::mutex                  mtx_;
     static std::unique_ptr<Controller> controller_;
-    static constexpr int               nr_thds = 8;  // TODO (YIFAN): Fixme! hardcoded for now.
+    //static constexpr int               nr_thds;  // TODO (YIFAN): Fixme! hardcoded for now.
     if (controller_)
         return controller_.get();
+    int nr_thds;
+    
     std::lock_guard<std::mutex> lg(mtx_);
+    if (controller_)
+        return controller_.get();
+    check_cuda_error(cudaGetDeviceCount(&nr_thds));
     controller_ = std::make_unique<Controller>(nr_thds);
     return controller_.get();
 }
 
-static inline Worker* GetWorker(int pe) noexcept
+inline Worker* GetWorker(int pe) noexcept
 {
     auto controller = GlobalController();
     if (!controller)
