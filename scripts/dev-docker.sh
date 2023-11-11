@@ -16,7 +16,7 @@ start_docker() {
         docker run --rm --runtime=nvidia --gpus all \
             -d -it --name ${CONTAINER_NAME} \
             -v ${HOME}/.cache/huggingface:/root/.cache/huggingface \
-            -v ${ROOT_DIR}/../manifold:/manifold \
+            -v ${ROOT_DIR}/../Manifold:/Manifold \
             -v ${ROOT_DIR}:/FasterTransformer \
             -v ${ROOT_DIR}:${ROOT_DIR} \
             -v ${MODELS_DIR}:/FasterTransformer/models \
